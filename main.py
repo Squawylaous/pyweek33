@@ -27,15 +27,8 @@ class entity:
     self.maze = maze
 
   def move(self, direction):
-    if direction == "up":
-      direction = vector(0, -1)
-    elif direction == "down":
-      direction = vector(0, 1)
-    elif direction == "left":
-      direction = vector(1, 0)
-    elif direction == "right":
-      direction = vector(-1, 0)
-    direction /= 2
+    dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(1, 0), "right":vector(-1, 0)}
+    direction = dir_dict[direction]/2
     stop = False
     for dist in range(self.maze.size):
       self.pos += direction
