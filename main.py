@@ -40,16 +40,17 @@ class entity:
 
 
 # class for walls, will be packaged into a maze
-# most attributes should be immutable, seve for anything ending in '_flag'
+# most attributes should be immutable, seve for anything ending in self.flags
 class wall:
-  def __init__(self, a, b=None):
+  def __init__(self, a, b=None, **flags):
     if b is None:
       a, b = a
     self.a, self.b = vector(a), vector(b)
     self.collidepoint = (self.a+self.b)/2
     self.horiz = self.a.x == self.b.x
     self.verti = self.a.y == self.b.y
-
+    self.flags = {"active":True}
+    self.flags.update(flags)
 
 # splits a wall into walls of length 1
 def split_wall(wall):
@@ -82,7 +83,7 @@ class maze:
     return False
   
   @property
-  def walls:
+  def walls(self):
     return chain(self.perm_walls, self.temp_walls, self.toggle_walls)
 
 
