@@ -15,6 +15,10 @@ screen.fill(background)
 def get_sign(x):
   return 1 if x>0 else -1 if x<0 else 0
 
+# transforms a vector to position on a surface
+def to_surface_pos(pos):
+  return tuple(map(int, pos*20+10))
+
 
 # class for entities that can move and stuff
 class entity:
@@ -55,6 +59,20 @@ class element:
     self.pos = pos
     self.flags = {"active":True}
     self.flags.update(flags)
+  
+  def __str__(self):
+    return f"element@({self.x}, {self.y})"
+  
+  @property
+  def x(self):
+    return self.pos.x
+  
+  @property
+  def y(self):
+    return self.pos.y
+  
+  def draw(self, surface):
+    pass
 
 
 # class for walls, subclasses element
@@ -63,6 +81,9 @@ class wall(element):
     super().__init__(pos, **flags)
     self.horiz = not self.pos.x%1
     self.verti = not self.pos.y%1
+  
+  def draw(self, surface):
+    pass
 
 
 # splits a wall into walls of length 1
@@ -83,14 +104,17 @@ def split_wall(wall):
 class maze:
   all = {};
   def __init__(self, name, size=None, *, walls):
-    self.name = name
-    self.perm_walls = [*map(wall, chain(*map(split_wall, walls)))]
-    if self.name not in maze.all:
-      maze.all[self.name] = []
+    self.name = name.split("_")
+    self.perm_walls = [*map(wall, chain(*chain(*[map(split_wall, [wall[i:i+2] for i in range(len(wall)-1)]) for wall in walls])))]
+    self.perm_walls = [*map(wall, chain(*map(split_wall, chain(*[[wall[i:i+2] for i in range(len(wall)-1)] for wall in walls]))))]
+    self.toggle_walls = []
+    if self.name[0] not in maze.all:
+      maze.all[self.name[0]] = {}
     if size is None:
       all_pos = [*map(op.attrgetter("pos"), self.elements)]
       chain(map(op.attrgetter("x"), all_pos), map(op.attrgetter("y"), all_pos))
-    maze.all[self.name].append(self)
+    maze.all[self.name[0]][self.name[1]] = self
+    self.surface = pygame.Surface()
 
   def __getitem__(self, item):
     for element in self.elements:
@@ -99,7 +123,11 @@ class maze:
   
   @property
   def elements(self):
-    return chain(self.perm_walls, self.temp_walls, self.toggle_walls)
+    return chain(self.perm_walls, self.toggle_walls)
+  
+  def draw(self):
+    for element in self.elements:
+      element.draw(self.surface)
 
 
 # variables/objects to store constant values
@@ -122,15 +150,13 @@ class level_names_class:
 level_names = level_names_class()
 print(level_names["l1"])
 
-maze("l1p", size=7,
-     walls=[
-            ((0, 0), (0, 5)), ((0, 5), (3, 5)), ((4, 5), (5, 5)), ((5, 5), (5, 0)), ((5, 0), (2, 0)), ((1, 0), (0, 0)),
-            ((2, 0), (2, 1)), ((2, 1), (3, 1)), ((1, 1), (1, 2)), ((1, 2), (2, 2)), ((2, 2), (2, 4)), ((2, 4), (3, 4)),
-            ((0, 3), (1, 3)), ((1, 4), (1, 5)), ((4, 4), (5, 4)), ((3, 3), (5, 3)), ((3, 2), (5, 2)), ((4, 1), (4, 2))]
+maze("l1_p", size=7,
+     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
+            ((3, 1), (3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
+            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))]
 )
-maze("l1t", size=7,
-     walls=[
-            ((0, 0), (0, 5)), ((0, 5), (3, 5)), ((4, 5), (5, 5)), ((5, 5), (5, 0)), ((5, 0), (2, 0)), ((1, 0), (0, 0)),
-            ((1, 0), (1, 2)), ((0, 3), (2, 3)), ((2, 3), (2, 2)), ((2, 1), (3, 1)), ((3, 1), (3, 3)), ((1, 5), (1, 4)),
-            ((1, 4), (3, 4)), ((4, 1), (4, 2)), ((4, 2), (5, 4)), ((4, 3), (4, 5))]
+maze("l1_t", size=7,
+     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
+            ((2, 1), (2, 3)), ((1, 4), (3, 4), (3, 3)), ((3, 2), (4, 2), (4, 4)), ((2, 6), (2, 5), (4, 5)),
+            ((5, 2), (5, 3), (6, 5)), ((5, 4), (5, 6))]
 )
