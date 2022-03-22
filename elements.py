@@ -39,3 +39,30 @@ class Wall(element):
     start = to_surface_pos(map(floor, self.pos), size)
     stop = to_surface_pos(map(ceil, self.pos), size)
     pygame.draw.line(surface, foreground, start, stop, 3)
+
+
+# decorator for creating element subclasses
+# element_dec returns the actual decerator function
+def element_dec(cls):
+  def decorator(subcls):
+    subcls.action = {**cls.action, **subcls.action}
+    return subcls
+  return decorator
+
+
+# class for tiles that activate when landed on, mixin, subclasses element
+@element_dec
+class Plate(element):
+  action = {"if":"landed"}
+  
+  def __init__(self, pos, **flags):
+    super().__init__(pos, **flags)
+
+
+# class for finish tile, subclasses element
+@Plate
+class Finish(element):
+  action = {"finish":None}
+  
+  def __init__(self, pos, **flags):
+    super().__init__(pos, **flags)
