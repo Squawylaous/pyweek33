@@ -6,6 +6,7 @@ from pygame.locals import *
 from pygame.math import Vector2 as vector
 
 import elements
+import misc
 from misc import *
 
 pygame.init()
@@ -13,7 +14,8 @@ screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
 
 # variables to store constant values
-twin_pos = vector(screen_rect.w/4, screen_rect.centery)-[surface_scale/2]*2
+misc.surface_scale = min(screen_rect.w/2, screen_rect.h-50)*0.875
+twin_pos = vector(screen_rect.w/4, screen_rect.centery)-[surface_scale/2+5]*2
 player_pos = twin_pos + (screen_rect.centerx, 0)
 
 # variables for storing references to data, can be updated
@@ -58,15 +60,15 @@ class maze:
       all_pos = {*chain(*map(op.attrgetter("pos"), self.elements))}
       size = max(all_pos) - min(all_pos)
     self.size = size
-    self.start, self.finish = vector(start), vector(finish)
+    self.start, self.finish = vector(start), elements.Finish(finish)
     
     if self.name[0] not in maze.all:
       maze.all[self.name[0]] = {}
     maze.all[self.name[0]][self.name[1]] = self
-    self.background = pygame.Surface((surface_scale, surface_scale))
+    self.background = pygame.Surface([surface_scale+10]*2)
     for element in self.still_elements:
       element.draw(self.background, self.size)
-    self.anim_surface = pygame.Surface((surface_scale, surface_scale))
+    self.anim_surface = pygame.Surface([surface_scale+10]*2)
 
   def __getitem__(self, item):
     for element in self.elements:
