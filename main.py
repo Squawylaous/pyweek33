@@ -1,5 +1,6 @@
 import operator as op
 from itertools import chain
+from math import ceil, floor
 import pygame
 from pygame.locals import *
 from pygame.math import Vector2 as vector
@@ -10,19 +11,19 @@ background = Color(0, 0, 0)
 foreground = Color(255, 255, 255)
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
-screen.fill(background)
+update_rects = []
 
 def get_sign(x):
   return 1 if x>0 else -1 if x<0 else 0
 
 # transforms a vector to position on a surface
 def to_surface_pos(pos):
-  return tuple(map(int, pos*20+10))
+  return tuple(map(int, vector(*pos)*20+(10, 10)))
 
 
 # class for entities that can move and stuff
 class entity:
-  def __init__(self, pos, maze=None):
+  def __init__(self, maze, pos):
     self.pos = vector(pos)
     self.maze = maze
 
@@ -76,7 +77,7 @@ class wall(element):
     self.verti = not self.pos.y%1
   
   def draw(self, surface):
-    pass
+    pygame.draw.line(surface, foreground, to_surface_pos(map(floor, self.pos)), to_surface_pos(map(ceil, self.pos)), 5)
 
 
 # splits a wall into walls of length 1
@@ -96,18 +97,24 @@ def split_wall(wall):
 # class for mazes, just a collection for walls
 class maze:
   all = {};
-  def __init__(self, name, size=None, *, walls):
+  def __init__(self, name, size=None, start=(0,0), *, walls):
     self.name = name.split("_")
-    self.perm_walls = [*map(wall, chain(*chain(*[map(split_wall, [wall[i:i+2] for i in range(len(wall)-1)]) for wall in walls])))]
-    self.perm_walls = [*map(wall, chain(*map(split_wall, chain(*[[wall[i:i+2] for i in range(len(wall)-1)] for wall in walls]))))]
+    walls = [[wall[i:i+2] for i in range(len(wall)-1)] for wall in walls]
+    self.perm_walls = [*map(wall, chain(*map(split_wall, chain(*walls))))]
     self.toggle_walls = []
+    if size is None:
+      all_pos = {*chain(*map(op.attrgetter("pos"), self.elements))}
+      size = max(all_pos) - min(all_pos)
+    self.size = size
+    self.start = vector(start)
+    
     if self.name[0] not in maze.all:
       maze.all[self.name[0]] = {}
-    if size is None:
-      all_pos = [*map(op.attrgetter("pos"), self.elements)]
-      chain(map(op.attrgetter("x"), all_pos), map(op.attrgetter("y"), all_pos))
     maze.all[self.name[0]][self.name[1]] = self
-    self.surface = pygame.Surface()
+    self.background = pygame.Surface((self.size*20+20, self.size*20+20))
+    for element in self.still_elements:
+      element.draw(self.background)
+    self.anim_surface = pygame.Surface((self.size*20+20, self.size*20+20))
 
   def __getitem__(self, item):
     for element in self.elements:
@@ -118,14 +125,26 @@ class maze:
   def elements(self):
     return chain(self.perm_walls, self.toggle_walls)
   
+  @property
+  def still_elements(self):
+    return chain(self.perm_walls)
+  
+  @property
+  def anim_elements(self):
+    return chain(self.toggle_walls)
+
   def draw(self):
-    for element in self.elements:
-      element.draw(self.surface)
+    self.anim_surface.blit(self.background, (0,0))
+    for element in self.anim_elements:
+      element.draw(self.anim_surface)
+    return self.anim_surface
 
 
 # variables/objects to store constant values
+NEXTLEVEL = USEREVENT + 0
+all_levels = ["l1"] # all levels, in order
+# singleton, esentally a dict w/ some dynamic values
 class level_names_class:
-  # singleton, esentally a dict w/ some dynamic values
   # keys are level codes (used internally) and values are displayed names
   def __init__(self):
     self.data = {}
@@ -138,18 +157,59 @@ class level_names_class:
     if key[0] == "l":
       self.data[key] = "Level "+key[1:]
     return self.data[key]
+  
+  def __next__(self):
+    current_level += 1
+    return all_levels[current_level]
 
+
+# variables for storing references to data, can be updated
+current_level = -1
+player = None
+twin = None
+current_level_p = None
+current_level_t = None
+
+
+# loads and initalizes a level
+def load_level(level):
+  global player, twin, current_level_p, current_level_t
+  screen.fill(background)
+  current_level_p = maze.all[level]["p"]
+  player = entity(current_level_p, current_level_p.start)
+  current_level_t = maze.all[level]["t"]
+  twin = entity(current_level_t, current_level_t.start)
+  screen.blit(current_level_p.draw(), (300, 120))
+  screen.blit(current_level_t.draw(), (300, 520))
+  pygame.display.flip()
 
 level_names = level_names_class()
-print(level_names["l1"])
 
-maze("l1_p", size=7,
+maze("l1_p", size=7, start=(4.5, 6.5),
      walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
             ((3, 1), (3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
             ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))]
 )
-maze("l1_t", size=7,
+maze("l1_t", size=7, start=(4.5, 6.5),
      walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
             ((2, 1), (2, 3)), ((1, 4), (3, 4), (3, 3)), ((3, 2), (4, 2), (4, 4)), ((2, 6), (2, 5), (4, 5)),
             ((5, 2), (5, 3), (6, 5)), ((5, 4), (5, 6))]
 )
+
+print(NEXTLEVEL)
+pygame.event.post(pygane.event.Event(NEXTLEVEL))
+
+while True:
+  if pygame.event.get(QUIT):
+    break
+  for event in pygame.event.get():
+    if event.type == KEYDOWN:
+      if event.key == K_RETURN:
+        pygame.event.post(pygame.event.Event(NEXTLEVEL))
+      elif event.key == K_ESCAPE:
+        pygame.event.post(pygame.event.Event(QUIT))
+    elif event.type == NEXTLEVEL:
+      load_level(next(level_names))
+      print(player.pos)
+  
+pygame.quit()
