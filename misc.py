@@ -8,23 +8,19 @@ foreground = Color(255, 255, 255)
 update_rects = []
 
 # variables to store constant values
-surface_scale = 300
+UI_offset = vector(50, 250) # how much space the UI needs
+surface_scale = vector() # size of mazes
 NEXTLEVEL = USEREVENT + 0
 all_levels = ["l1"] # all levels, in order
 
-# variables for storing references to data, can be updated
 current_level = -1
-player = None
-twin = None
-current_level_p = None
-current_level_t = None
 
 def get_sign(x):
   return 1 if x>0 else -1 if x<0 else 0
 
 # transforms a vector to position on a surface
 def to_surface_pos(pos, size):
-  return tuple(map(int, vector(*pos)/size*surface_scale+(5,5)))
+  return tuple(map(int, surface_scale.elementwise()*vector(*pos)/size+(5,5)))
 
 
 # singleton, esentally a dict w/ some dynamic values
