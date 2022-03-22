@@ -24,7 +24,7 @@ def get_sign(x):
 
 # transforms a vector to position on a surface
 def to_surface_pos(pos, size):
-  return tuple(map(int, vector(*pos)/size*surface_scale))
+  return tuple(map(int, vector(*pos)/size*surface_scale+(5,5)))
 
 
 # singleton, esentally a dict w/ some dynamic values
