@@ -41,19 +41,11 @@ class Wall(element):
     pygame.draw.line(surface, foreground, start, stop, 3)
 
 
-# decorator for creating element subclasses
-# element_dec returns the actual decerator function
-def element_dec(cls):
-  def decorator(subcls):
-    subcls.action = {**cls.action, **subcls.action}
-    return subcls
-  return decorator
+# decorator for creating element subclasses for tiles that activate when landed on
+def Plate(subcls):
+  subcls.action = {"if":{"?":"landed", "T":subcls.action}}
+  return subcls
 
-
-# class for tiles that activate when landed on, mixin
-@element_dec
-class Plate():
-  action = {"if":"landed"}
 
 # class for finish tile, subclasses element
 @Plate
