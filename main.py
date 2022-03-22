@@ -13,11 +13,16 @@ pygame.init()
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
 
+# surfaces to draw mazes on
+main_surface_rect = pygame.rect.Rect(UI_offset, vector(screen_rect.size)-UI_offset)
+main_surface = screen.subsurface(main_surface_rect)
+
 # variables to store constant values
-#surface_scale.update(screen_rect.w/2, screen_rect.h-50)
-surface_scale += vector([0.875*min(-UI_offset + (screen_rect.w/2, screen_rect.h))]*2)
-twin_pos = -surface_scale/2+(screen_rect.w/4, screen_rect.centery)-(5, 5)
-player_pos = twin_pos + (screen_rect.centerx, 0)
+surface_scale.x = min(main_surface_rect.w/2, main_surface_rect.h)
+surface_scale.y = surface_scale.x
+surface_scale_padded += surface_scale
+twin_pos = -(surface_scale_padded-(main_surface_rect.w/2, main_surface_rect.h))/2
+player_pos = twin_pos + (main_surface_rect.w/2, 0)
 
 # variables for storing references to data, can be updated
 player = None
@@ -36,10 +41,11 @@ class entity:
     direction = dir_dict[direction]/2
     stop = False
     check_if = False
-    check_stop = False
+    prev_actions = []
     for dist in range(self.maze.size):
       self.pos += direction
       if maze[self.pos]:
+        
         action = getattr(maze[self.pos], "action", {"stop":"before"})
         for i in action:
           if i == "stop":
@@ -48,6 +54,10 @@ class entity:
               self.pos -= direction
             elif action[i] == "return":
               self.pos -= direction*dist
+          elif i == "if":
+            check_if = action[i]
+            prev_actions.append[(i, action)]
+      
       if stop:
         break
 
@@ -69,10 +79,10 @@ class maze:
     if self.name[0] not in maze.all:
       maze.all[self.name[0]] = {}
     maze.all[self.name[0]][self.name[1]] = self
-    self.background = pygame.Surface(surface_scale+(10, 10))
+    self.background = pygame.Surface(surface_scale_padded)
     for element in self.still_elements:
       element.draw(self.background, self.size)
-    self.anim_surface = pygame.Surface(surface_scale+(10, 10))
+    self.anim_surface = pygame.Surface(surface_scale_padded)
 
   def __getitem__(self, item):
     for element in self.elements:
@@ -120,9 +130,9 @@ def load_level(level):
   player = entity(current_level_p, current_level_p.start)
   current_level_t = maze.all[level]["t"]
   twin = entity(current_level_t, current_level_t.start)
-  screen.blit(current_level_p.draw(), player_pos)
-  screen.blit(current_level_t.draw(), twin_pos)
-  pygame.display.flip()
+  main_surface.blit(current_level_p.draw(), player_pos)
+  main_surface.blit(current_level_t.draw(), twin_pos)
+  update_rects.append(main_surface_rect)
 
 level_names = level_names_class()
 
