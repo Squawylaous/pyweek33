@@ -9,7 +9,7 @@ from misc import *
 # most attributes should be immutable, seve for anything in self.flags
 class element:
   def __init__(self, pos, **flags):
-    self.pos = pos
+    self.pos = vector(pos)
     self.flags = {"active":True}
     self.flags.update(flags)
   
@@ -50,14 +50,10 @@ def element_dec(cls):
   return decorator
 
 
-# class for tiles that activate when landed on, mixin, subclasses element
+# class for tiles that activate when landed on, mixin
 @element_dec
-class Plate(element):
+class Plate():
   action = {"if":"landed"}
-  
-  def __init__(self, pos, **flags):
-    super().__init__(pos, **flags)
-
 
 # class for finish tile, subclasses element
 @Plate
