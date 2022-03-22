@@ -9,13 +9,15 @@ import elements
 from misc import *
 
 pygame.init()
-
-background = Color(0, 0, 0)
-foreground = Color(255, 255, 255)
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
-update_rects = []
 
+# variables to store constant values
+twin_pos = vector(screen_rect.w/4, screen_rect.centery)-[surface_scale/2]*2
+player_pos = twin_pos + (screen_rect.centerx, 0)
+
+# variables for storing references to data, can be updated
+# there are none yet
 
 # class for entities that can move and stuff
 class entity:
@@ -27,6 +29,8 @@ class entity:
     dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(1, 0), "right":vector(-1, 0)}
     direction = dir_dict[direction]/2
     stop = False
+    check_if = False
+    check_stop = False
     for dist in range(self.maze.size):
       self.pos += direction
       if maze[self.pos]:
@@ -40,20 +44,6 @@ class entity:
               self.pos -= direction*dist
       if stop:
         break
-
-
-# splits a wall into walls of length 1
-def split_wall(wall):
-  a, b = wall
-  a = vector(a)
-  b = vector(b)
-  diff = vector(*map(get_sign, b - a))
-  new_a, new_b = a, a+diff
-  for i in range(int(abs(sum(b-a)))):
-    yield (new_a + new_b)/2
-    if new_b == b:
-      return
-    new_a, new_b = new_b, new_b+diff
 
 
 # class for mazes, just a collection for walls
@@ -102,39 +92,18 @@ class maze:
     return self.anim_surface
 
 
-# singleton, esentally a dict w/ some dynamic values
-class level_names_class:
-  # keys are level codes (used internally) and values are displayed names
-  def __init__(self):
-    self.data = {}
-  
-  def __getitem__(self, key):
-    try:
-      return self.data[key]
-    except KeyError:
-      pass
-    if key[0] == "l":
-      self.data[key] = "Level "+key[1:]
-    return self.data[key]
-  
-  def __next__(self):
-    global current_level
-    current_level += 1
-    return all_levels[current_level]
-
-
-# variables to store constant values
-twin_pos = vector(screen_rect.w/4, screen_rect.centery)-[surface_scale/2]*2
-player_pos = twin_pos + (screen_rect.centerx, 0)
-NEXTLEVEL = USEREVENT + 0
-all_levels = ["l1"] # all levels, in order
-
-# variables for storing references to data, can be updated
-current_level = -1
-player = None
-twin = None
-current_level_p = None
-current_level_t = None
+# splits a wall into walls of length 1
+def split_wall(wall):
+  a, b = wall
+  a = vector(a)
+  b = vector(b)
+  diff = vector(*map(get_sign, b - a))
+  new_a, new_b = a, a+diff
+  for i in range(int(abs(sum(b-a)))):
+    yield (new_a + new_b)/2
+    if new_b == b:
+      return
+    new_a, new_b = new_b, new_b+diff
 
 
 # loads and initalizes a level
@@ -176,4 +145,6 @@ while True:
     elif event.type == NEXTLEVEL:
       load_level(next(level_names))
   
+  pygame.display.update(update_rects)
+  update_rects = []
 pygame.quit()
