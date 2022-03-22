@@ -14,12 +14,16 @@ screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
 
 # variables to store constant values
-misc.surface_scale = min(screen_rect.w/2, screen_rect.h-50)*0.875
-twin_pos = vector(screen_rect.w/4, screen_rect.centery)-[surface_scale/2+5]*2
+#surface_scale.update(screen_rect.w/2, screen_rect.h-50)
+surface_scale += vector([0.875*min(-UI_offset + (screen_rect.w/2, screen_rect.h))]*2)
+twin_pos = -surface_scale/2+(screen_rect.w/4, screen_rect.centery)-(5, 5)
 player_pos = twin_pos + (screen_rect.centerx, 0)
 
 # variables for storing references to data, can be updated
-# there are none yet
+player = None
+twin = None
+current_level_p = None
+current_level_t = None
 
 # class for entities that can move and stuff
 class entity:
@@ -65,10 +69,10 @@ class maze:
     if self.name[0] not in maze.all:
       maze.all[self.name[0]] = {}
     maze.all[self.name[0]][self.name[1]] = self
-    self.background = pygame.Surface([surface_scale+10]*2)
+    self.background = pygame.Surface(surface_scale+(10, 10))
     for element in self.still_elements:
       element.draw(self.background, self.size)
-    self.anim_surface = pygame.Surface([surface_scale+10]*2)
+    self.anim_surface = pygame.Surface(surface_scale+(10, 10))
 
   def __getitem__(self, item):
     for element in self.elements:
