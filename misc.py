@@ -1,3 +1,4 @@
+import pygame
 from pygame.locals import *
 from pygame.math import Vector2 as vector
 
@@ -7,19 +8,20 @@ background = Color(0, 0, 0)
 foreground = Color(255, 255, 255)
 update_rects = []
 
+group_dict = lambda dict_: {i:dict_[key] for key in dict_ for i in key}
+post_event = lambda event: pygame.event.post(pygame.event.Event(event))
+
 # variables to store constant values
 UI_offset = vector(25, 50) # how much space the UI needs
 surface_scale_real = vector() # size of mazes scaled to fit screen
 surface_scale = vector(1000, 1000) # size of mazes
 surface_padding = vector(100, 100) # empty space around a surface
 NEXTLEVEL = USEREVENT + 0
-direction_keys=[K_UP, K_DOWN, K_LEFT, K_RIGHT]
+direction_keys = group_dict({(K_UP, K_w):"up", (K_DOWN, K_s):"down", (K_LEFT, K_a):"left", (K_RIGHT, K_d):"right"})
 all_levels = ["l1"] # all levels, in order
 
 def get_sign(x):
   return 1 if x>0 else -1 if x<0 else 0
-
-group_dict = lambda dict_: {i:dict_[key] for key in dict_ for i in key}
 
 # transforms a vector to position on a surface
 def to_surface_pos(pos, size):
@@ -51,7 +53,13 @@ class level_names_class:
 class container:
   def __init__(self, default=None, **kwargs):
     self._default = default
-    [setattr(self, key, value) for key, value in kwargs.items()]
+    for key, value in kwargs.items():
+      setattr(self, key, value)
   
   def __getattr__(self, name):
     return self._default
+  
+  def update(self, other):
+    for key, value in other.__dict__.items():
+      if key != "_default" and key not in self.__dict__:
+        setattr(self, key, value)
