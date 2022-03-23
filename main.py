@@ -35,30 +35,39 @@ class entity:
   def __init__(self, maze, pos):
     self.pos = vector(pos)
     self.maze = maze
+  
+  @staticmethod
+  def act(action, *, check_if=None):
+    if action is None:
+      action = {}
+    do = container(move=vector())
+    for i in action:
+      if i in ["stop", "finish"]:
+        setattr(do, i, True)
+      if i == "stop":
+        if action[i] == "before":
+          do.move = -direction
+        elif action[i] == "return":
+          do.move = -direction*dist
+      elif i == "if":
+        do.check_if = action[i]
+    
+    if check_if is not None:
+      if check_if["?"] == "landed":
+        entity.act(check_if["T" if do.stop else "F"])
+    
+    return do
 
   def move(self, direction):
     dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(1, 0), "right":vector(-1, 0)}
     direction = dir_dict[direction]/2
-    stop = False
-    check_if = False
-    prev_actions = []
+    do = container()
     for dist in range(self.maze.size):
       self.pos += direction
       if maze[self.pos]:
-        
-        action = getattr(maze[self.pos], "action", {"stop":"before"})
-        for i in action:
-          if i == "stop":
-            stop = True
-            if action[i] == "before":
-              self.pos -= direction
-            elif action[i] == "return":
-              self.pos -= direction*dist
-          elif i == "if":
-            check_if = action[i]
-            prev_actions.append[(i, action)]
-      
-      if stop:
+        do = entity.act(getattr(maze[self.pos], "action", {"stop":"before"}), check_if=do.check_if)
+        self.pos += do.move
+      if do.stop:
         break
 
 
