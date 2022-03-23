@@ -42,28 +42,30 @@ class entity:
     self.rect = self.surface.get_rect()
 
   def move(self, direction):
-    dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(1, 0), "right":vector(-1, 0)}
+    dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(-1, 0), "right":vector(1, 0)}
     direction = dir_dict[direction]/2
     do = container(check_ifs=[])
-    for dist in range(self.maze.size):
+    for dist in range(self.maze.size*2):
       self.pos += direction
-      if maze[self.pos]:
-        do = entity.act(getattr(maze[self.pos], "action", {"stop":"before"}), check_ifs=do.check_ifs)
+      if self.maze[self.pos]:
+        do = entity.act(getattr(self.maze[self.pos], "action", {"stop":"before"}),
+                        check_ifs=do.check_ifs, direction=direction)
         self.pos += do.move
       if do.stop:
         break
     if do.finish:
-      print("win" if self.isPlayer else "lose")
+      print(f"you {('lose', 'win')[self.isPlayer]}")
   
   def draw(self):
     self._draw(self)
     self.maze.surface.blit(self.surface, to_surface_pos(self.pos-(0.375, 0.375), self.maze.size))
   
   @staticmethod
-  def act(action, *, check_ifs=None):
+  def act(action, *, check_ifs=[], direction=vector(), do=None):
     if action is None:
       action = {}
-    do = container(move=vector(), check_ifs=[])
+    if do is None:
+      do = container(move=vector(), check_ifs=[])
     for i in action:
       if i in ["stop", "finish"]:
         setattr(do, i, True)
@@ -77,7 +79,7 @@ class entity:
     
     for check_if in check_ifs:
       if check_if["?"] == "landed":
-        entity.act(check_if["T" if do.stop else "F"])
+        entity.act(check_if["T" if do.stop else "F"], direction=direction, do=do)
     
     return do
 
@@ -87,14 +89,15 @@ class maze:
   all = {};
   def __init__(self, name, pos, size=None, start=(0,0), finish=(0,0), *, walls):
     self.name = name.split("_")
+    self.start, self.finish = vector(start), elements.Finish(finish)
     walls = chain(*[zip(wall, wall[1:]) for wall in walls])
     self.perm_walls = [*map(elements.Wall, chain(*map(split_wall, walls)))]
     self.toggle_walls = []
+    self.plates = [self.finish]
     if size is None:
       all_pos = {*chain(*map(op.attrgetter("pos"), self.elements))}
       size = max(all_pos) - min(all_pos)
     self.size = size
-    self.start, self.finish = vector(start), elements.Finish(finish)
     if self.name[0] not in maze.all:
       maze.all[self.name[0]] = {}
     maze.all[self.name[0]][self.name[1]] = self
@@ -107,17 +110,18 @@ class maze:
     self.scaled_surface = main_surface.subsurface(self.rect)
 
   def __getitem__(self, item):
+    item = vector(item)
     for element in self.elements:
       if item == element.pos:
-        return elements
+        return element
   
   @property
   def elements(self):
-    return chain(self.perm_walls, self.toggle_walls)
+    return chain(self.still_elements, self.anim_elements)
   
   @property
   def still_elements(self):
-    return chain(self.perm_walls)
+    return chain(self.plates, self.perm_walls)
   
   @property
   def anim_elements(self):
@@ -170,6 +174,10 @@ def load_level(level):
   current_level_t = maze.all[level]["t"]
   player = entity(current_level_p, True, draw_entity((161, 161, 161)).square)
   twin = entity(current_level_t, False, draw_entity((161, 145, 145)).square)
+  update_level()
+
+# updates the current level display
+def update_level():
   current_level_p.draw()
   current_level_t.draw()
   update_rects.append(main_surface_rect)
@@ -187,7 +195,7 @@ maze("l1_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
             ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
 )
 
-pygame.event.post(pygame.event.Event(NEXTLEVEL))
+post_event(NEXTLEVEL)
 
 while True:
   if pygame.event.get(QUIT):
@@ -195,11 +203,13 @@ while True:
   for event in pygame.event.get():
     if event.type == KEYDOWN:
       if event.key in direction_keys:
-        print(event)
+        twin.move(direction_keys[event.key])
+        player.move(direction_keys[event.key])
+        update_level()
       elif event.key == K_RETURN:
-        pygame.event.post(pygame.event.Event(NEXTLEVEL))
+        post_event(NEXTLEVEL)
       elif event.key == K_ESCAPE:
-        pygame.event.post(pygame.event.Event(QUIT))
+        post_event(QUIT)
     elif event.type == NEXTLEVEL:
       load_level(next(level_names))
   
