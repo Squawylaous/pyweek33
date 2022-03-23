@@ -32,15 +32,38 @@ current_level_t = None
 
 # class for entities that can move and stuff
 class entity:
-  def __init__(self, maze, pos):
-    self.pos = vector(pos)
-    self.maze = maze
+  all = []
+  
+  def __init__(self, maze, isPlayer, draw):
+    self.maze, self.isPlayer, self._draw = maze, isPlayer, draw
+    self.pos = self.maze.start
+    entity.all.append(self)
+    self.surface = pygame.Surface(surface_scale/self.maze.size)
+    self.rect = self.surface.get_rect()
+
+  def move(self, direction):
+    dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(1, 0), "right":vector(-1, 0)}
+    direction = dir_dict[direction]/2
+    do = container(check_ifs=[])
+    for dist in range(self.maze.size):
+      self.pos += direction
+      if maze[self.pos]:
+        do = entity.act(getattr(maze[self.pos], "action", {"stop":"before"}), check_ifs=do.check_ifs)
+        self.pos += do.move
+      if do.stop:
+        break
+    if do.finish:
+      print("win" if self.isPlayer else "lose")
+  
+  def draw(self):
+    self._draw(self)
+    self.maze.blit(self.surface, to_surface_pos(self.pos-(0.5, 0.5), self.maze.size))
   
   @staticmethod
-  def act(action, *, check_if=None):
+  def act(action, *, check_ifs=None):
     if action is None:
       action = {}
-    do = container(move=vector())
+    do = container(move=vector(), check_ifs=[])
     for i in action:
       if i in ["stop", "finish"]:
         setattr(do, i, True)
@@ -50,25 +73,13 @@ class entity:
         elif action[i] == "return":
           do.move = -direction*dist
       elif i == "if":
-        do.check_if = action[i]
+        do.check_ifs.append(action[i])
     
-    if check_if is not None:
+    for check_if in check_ifs:
       if check_if["?"] == "landed":
         entity.act(check_if["T" if do.stop else "F"])
     
     return do
-
-  def move(self, direction):
-    dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(1, 0), "right":vector(-1, 0)}
-    direction = dir_dict[direction]/2
-    do = container()
-    for dist in range(self.maze.size):
-      self.pos += direction
-      if maze[self.pos]:
-        do = entity.act(getattr(maze[self.pos], "action", {"stop":"before"}), check_if=do.check_if)
-        self.pos += do.move
-      if do.stop:
-        break
 
 
 # class for mazes, just a collection for walls
@@ -91,7 +102,8 @@ class maze:
     self.background = pygame.Surface(surface_scale_padded)
     for element in self.still_elements:
       element.draw(self.background, self.size)
-    self.anim_surface = pygame.Surface(surface_scale_padded)
+    self.surface = pygame.Surface(surface_scale_padded)
+    self.rect = self.surface.get_rect()
 
   def __getitem__(self, item):
     for element in self.elements:
@@ -111,10 +123,21 @@ class maze:
     return chain(self.toggle_walls)
 
   def draw(self):
-    self.anim_surface.blit(self.background, (0,0))
+    self.surface.blit(self.background, (0,0))
     for element in self.anim_elements:
-      element.draw(self.anim_surface, self.size)
-    return self.anim_surface
+      element.draw(self.surface, self.size)
+
+
+# functions for drawing entities
+def draw_entity(color):
+  color = Color(color)
+  
+  def draw_square(self):
+    draw_rect = pygame.rect.Rect((0,0), vector(self.rect.size)*0.75)
+    draw_rect.center = self.rect.center
+    pygame.draw.rect(self.surface, color, draw_rect)
+  
+  return container(square=draw_square)
 
 
 # splits a wall into walls of length 1
@@ -136,11 +159,15 @@ def load_level(level):
   global player, twin, current_level_p, current_level_t
   screen.fill(background)
   current_level_p = maze.all[level]["p"]
-  player = entity(current_level_p, current_level_p.start)
   current_level_t = maze.all[level]["t"]
-  twin = entity(current_level_t, current_level_t.start)
-  main_surface.blit(current_level_p.draw(), player_pos)
-  main_surface.blit(current_level_t.draw(), twin_pos)
+  player = entity(current_level_p, True, draw_entity((161,161,161)).square)
+  twin = entity(current_level_t, False)
+  current_level_p.draw()
+  current_level_t.draw()
+  player.draw()
+  twin.draw()
+  main_surface.blit(current_level_p.surface, player_pos)
+  main_surface.blit(current_level_t.surface, twin_pos)
   update_rects.append(main_surface_rect)
 
 level_names = level_names_class()
