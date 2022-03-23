@@ -42,3 +42,12 @@ class level_names_class:
   def __next__(self):
     self.current_level += 1
     return all_levels[self.current_level]
+
+# basically a mix of javasctipt objects and default dicts, just for convience
+class container:
+  def __init__(self, default=None, **kwargs):
+    self._default = default
+    [setattr(self, key, value) for key, value in kwargs.items()]
+  
+  def __getattr__(self, name):
+    return self._default
