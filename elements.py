@@ -24,7 +24,7 @@ class element:
   def y(self):
     return self.pos.y
   
-  def draw(self, surface):
+  def draw(self, surface, size):
     pass
 
 
@@ -36,8 +36,8 @@ class Wall(element):
     self.verti = not self.pos.y%1
   
   def draw(self, surface, size):
-    start = to_surface_pos(map(floor, self.pos), size) - vector(self.verti, self.horiz)*25
-    stop = to_surface_pos(map(ceil, self.pos), size) + vector(self.verti, self.horiz)*25
+    start = to_surface_pos(map(floor, self.pos), size) - vector(self.verti, self.horiz)*26
+    stop = to_surface_pos(map(ceil, self.pos), size) + vector(self.verti, self.horiz)*26
     pygame.draw.line(surface, foreground, start, stop, 50)
 
 
