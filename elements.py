@@ -43,7 +43,7 @@ class Wall(element):
 
 # decorator for creating element subclasses for tiles that activate when landed on
 def Plate(subcls):
-  subcls.action = {"if":{"?":"landed", "T":subcls.action}}
+  subcls.action = {"if":{"?":"landed", "T":subcls.action, "F":None}}
   return subcls
 
 
