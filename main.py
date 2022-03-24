@@ -10,12 +10,10 @@ import misc
 from misc import *
 
 pygame.init()
-pygame.font.init()
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
 font = pygame.font.SysFont("", 75)
-
-current_state = {"menu"}
+current_state = container(screen="menu", input=False)
 
 
 # surface to draw mazes on
@@ -164,6 +162,15 @@ def split_wall(wall):
     if new_b == b:
       return
     new_a, new_b = new_b, new_b+diff
+
+
+# returns decarator function
+def load_screen(screen):
+  def load_decorator(func):
+    current_state.screen = screen
+    current_state.input = False
+    current_state.input = True
+  return load_decorator
 
 
 # loads the menu screen
