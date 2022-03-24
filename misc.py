@@ -77,3 +77,18 @@ class container:
     for key, value in kwargs.items():
       if override or (key != "_default" and key not in self.__dict__):
         setattr(self, key, value)
+
+
+# class for UI buttons the user can select. instances are groups
+class button:
+  def __init__(self, func, **options):
+    self.func = func
+    self.options = options
+  
+  def select(self, choice):
+    self._func(choic)
+
+
+def menu_button_func(choice):
+  pass
+menu_buttons = button(menu_button_func, start={}, cont={}, select={}, exit={})
