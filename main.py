@@ -147,7 +147,7 @@ def draw_entity(color):
     draw_rect.center = self.rect.center
     pygame.draw.rect(self.surface, color, draw_rect)
   
-  return container(fill=draw_fill, square=draw_square)
+  return container(square=draw_square)
 
 
 # splits a wall into walls of length 1
@@ -164,12 +164,12 @@ def split_wall(wall):
     new_a, new_b = new_b, new_b+diff
 
 
-# returns decarator function
-def load_screen(screen):
+# returns decorator function
+def load_screen(current_screen):
   # decorator function, updates current_state and turns off user input untill function finishes running
   def load_decorator(func):
     def load_func(*args, **kwargs):
-      current_state.override(screen=screen, input=False)
+      current_state.update(override=True, screen=current_screen, input=False)
       screen.fill(background)
       func(*args, **kwargs)
       current_state.input = True
@@ -218,7 +218,37 @@ maze("l1_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
             ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
 )
 
+# returns a decorator function
+def button_init(pos, offset, padding):
+  pos, offset, padding = vector(pos), vector(offset), vector(padding)
+  pos = offset
+  def init_decorator(func):
+    def init_func(self, choice):
+      padding
+      font.size(choice.text)
+      choice.text = font.render(choice.text, 1, foreground)
+      
+      return func(choice)
+    return init_func
+  return init_decorator
+
+# initalizes each menu button
+@button_init(screen_rect.center, (1, 4), (0, 25))
+def menu_button_init(self, choice):
+  return choice
+
+# called when a menu button is selected
+def menu_button_func(choice):
+  pass
+
+menu_buttons = button(menu_button_func, menu_button_init,
+                      start=container(text="Start New Game", pos=0),
+                      cont=container(text="Continue Game", pos=0),
+                      select=container(text="Level Select", pos=0),
+                      exit=container(text="Quit", pos=0))
+
 post_event(MAINMENU)
+post_event(NEXTLEVEL)
 
 while True:
   if pygame.event.get(QUIT):
