@@ -66,29 +66,30 @@ class container:
     return self._default
   
   def __repr__(self):
-    return f"container<{self.__dict__}>"
+    return f"container<{self.dict}>"
+  
+  @property
+  def dict(self):
+    return self.__dict__
   
   def update(self, other=None, override=False, **kwargs):
     if other is None:
       other = {}
     elif isinstance(other, container):
-      other = other.__dict__
+      other = other.dict
     kwargs.update(other)
     for key, value in kwargs.items():
-      if override or (key != "_default" and key not in self.__dict__):
+      if override or (key != "_default" and key not in self.dict):
         setattr(self, key, value)
 
 
 # class for UI buttons the user can select. instances are groups
 class button:
-  def __init__(self, func, **options):
+  def __init__(self, func, init_func, **options):
     self.func = func
-    self.options = options
+    self.rect = screen_rect
+    self.surface = screen.subsurface(self.rect)
+    self.options = {key:init_func(self, container(name=key, **value.dict)) for key, value in options.items()}
   
   def select(self, choice):
     self._func(choic)
-
-
-def menu_button_func(choice):
-  pass
-menu_buttons = button(menu_button_func, start={}, cont={}, select={}, exit={})
