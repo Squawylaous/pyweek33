@@ -65,7 +65,15 @@ class container:
   def __getattr__(self, name):
     return self._default
   
-  def update(self, other):
-    for key, value in other.__dict__.items():
-      if key != "_default" and key not in self.__dict__:
+  def __repr__(self):
+    return f"container<{self.__dict__}>"
+  
+  def update(self, other=None, override=False, **kwargs):
+    if other is None:
+      other = {}
+    elif isinstance(other, container):
+      other = other.__dict__
+    kwargs.update(other)
+    for key, value in kwargs.items():
+      if override or (key != "_default" and key not in self.__dict__):
         setattr(self, key, value)
