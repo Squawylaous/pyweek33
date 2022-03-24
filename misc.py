@@ -12,11 +12,13 @@ group_dict = lambda dict_: {i:dict_[key] for key in dict_ for i in key}
 post_event = lambda event: pygame.event.post(pygame.event.Event(event))
 
 # variables to store constant values
-UI_offset = vector(25, 50) # how much space the UI needs
+UI_offset = vector(0, 50) # how much space the UI needs
 surface_scale_real = vector() # size of mazes scaled to fit screen
 surface_scale = vector(1000, 1000) # size of mazes
 surface_padding = vector(100, 100) # empty space around a surface
-NEXTLEVEL = USEREVENT + 0
+MAINMENU = USEREVENT + 0
+LEVELSELECT = USEREVENT + 1
+NEXTLEVEL = USEREVENT + 2
 direction_keys = group_dict({(K_UP, K_w):"up", (K_DOWN, K_s):"down", (K_LEFT, K_a):"left", (K_RIGHT, K_d):"right"})
 all_levels = ["l1"] # all levels, in order
 
@@ -47,6 +49,10 @@ class level_names_class:
   def __next__(self):
     self.current_level += 1
     return all_levels[self.current_level]
+  
+  @property
+  def current(self):
+    return self[all_levels[self.current_level]]
 
 
 # basically a mix of javasctipt objects and default dicts, just for convience
