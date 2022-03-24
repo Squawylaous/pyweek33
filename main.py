@@ -166,28 +166,31 @@ def split_wall(wall):
 
 # returns decarator function
 def load_screen(screen):
+  # decorator function, updates current_state and turns off user input untill function finishes running
   def load_decorator(func):
-    current_state.screen = screen
-    current_state.input = False
-    current_state.input = True
+    def load_func(*args, **kwargs):
+      current_state.override(screen=screen, input=False)
+      screen.fill(background)
+      func(*args, **kwargs)
+      current_state.input = True
+    return load_func
   return load_decorator
 
 
 # loads the menu screen
+@load_screen("menu")
 def load_menu():
-  current_state = {"menu"}
-  current_state = {"menu", "taking_input"}
+  pass
 
 # loads the level select screen
+@load_screen("select")
 def load_select():
-  current_state = {"select"}
-  current_state = {"select", "taking_input"}
+  pass
 
 # loads and initalizes a level
+@load_screen("level")
 def load_level(level):
-  current_state = {"level"}
   global player, twin, current_level_p, current_level_t
-  screen.fill(background)
   current_level_p = maze.all[level]["p"]
   current_level_t = maze.all[level]["t"]
   player = entity(current_level_p, True, draw_entity((161, 161, 161)).square)
@@ -195,7 +198,6 @@ def load_level(level):
   level_text = level_names.current
   screen.blit(font.render(level_text, 1, foreground), (screen_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
   update_level()
-  current_state = {"level", "taking_input"}
 
 # updates the current level display
 def update_level():
