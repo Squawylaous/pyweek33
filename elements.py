@@ -54,3 +54,8 @@ class Finish(element):
   
   def __init__(self, pos, **flags):
     super().__init__(pos, **flags)
+  
+  def draw(self, surface, size):
+    draw_rect = pygame.rect.Rect((0,0), surface_scale*0.75)
+    draw_rect.center = to_surface_pos(self.pos, size)
+    pygame.draw.rect(surface, foreground, draw_rect)
