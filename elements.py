@@ -38,7 +38,7 @@ class Wall(element):
   def draw(self, surface, size):
     start = to_surface_pos(map(floor, self.pos), size) - vector(self.verti, self.horiz)*26
     stop = to_surface_pos(map(ceil, self.pos), size) + vector(self.verti, self.horiz)*26
-    pygame.draw.line(surface, foreground, start, stop, 50)
+    pygame.draw.line(surface, foreground, start, stop, 55)
 
 
 # decorator for creating element subclasses for tiles that activate when landed on
