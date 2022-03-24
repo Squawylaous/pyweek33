@@ -10,8 +10,13 @@ import misc
 from misc import *
 
 pygame.init()
+pygame.font.init()
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
+font = pygame.font.SysFont("", 75)
+
+current_state = {"menu"}
+
 
 # surface to draw mazes on
 main_surface_rect = pygame.rect.Rect(UI_offset, vector(screen_rect.size)-UI_offset)
@@ -144,12 +149,7 @@ def draw_entity(color):
     draw_rect.center = self.rect.center
     pygame.draw.rect(self.surface, color, draw_rect)
   
-  def draw_square(self):
-    draw_rect = pygame.rect.Rect((0,0), vector(self.rect.size))
-    draw_rect.center = self.rect.center
-    pygame.draw.rect(self.surface, color, draw_rect)
-  
-  return container(square=draw_square)
+  return container(fill=draw_fill, square=draw_square)
 
 
 # splits a wall into walls of length 1
@@ -166,15 +166,29 @@ def split_wall(wall):
     new_a, new_b = new_b, new_b+diff
 
 
+# loads the menu screen
+def load_menu():
+  current_state = {"menu"}
+  current_state = {"menu", "taking_input"}
+
+# loads the level select screen
+def load_select():
+  current_state = {"select"}
+  current_state = {"select", "taking_input"}
+
 # loads and initalizes a level
 def load_level(level):
+  current_state = {"level"}
   global player, twin, current_level_p, current_level_t
   screen.fill(background)
   current_level_p = maze.all[level]["p"]
   current_level_t = maze.all[level]["t"]
   player = entity(current_level_p, True, draw_entity((161, 161, 161)).square)
   twin = entity(current_level_t, False, draw_entity((161, 145, 145)).square)
+  level_text = level_names.current
+  screen.blit(font.render(level_text, 1, foreground), (screen_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
   update_level()
+  current_state = {"level", "taking_input"}
 
 # updates the current level display
 def update_level():
@@ -195,21 +209,27 @@ maze("l1_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
             ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
 )
 
-post_event(NEXTLEVEL)
+post_event(MAINMENU)
 
 while True:
   if pygame.event.get(QUIT):
     break
   for event in pygame.event.get():
     if event.type == KEYDOWN:
-      if event.key in direction_keys:
-        twin.move(direction_keys[event.key])
-        player.move(direction_keys[event.key])
-        update_level()
-      elif event.key == K_RETURN:
-        post_event(NEXTLEVEL)
-      elif event.key == K_ESCAPE:
+      if event.key == K_ESCAPE:
         post_event(QUIT)
+      elif "taking_input" in current_state:
+        if event.key in direction_keys:
+          if "level" in current_state:
+            twin.move(direction_keys[event.key])
+            player.move(direction_keys[event.key])
+            update_level()
+        elif event.key == K_RETURN:
+          post_event(NEXTLEVEL)
+    elif event.type == MAINMENU:
+      load_menu()
+    elif event.type == LEVELSELECT:
+      load_select()
     elif event.type == NEXTLEVEL:
       load_level(next(level_names))
   
