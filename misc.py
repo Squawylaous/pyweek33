@@ -22,8 +22,10 @@ surface_padding = vector(100, 100) # empty space around a surface
 MAINMENU = USEREVENT + 0
 LEVELSELECT = USEREVENT + 1
 NEXTLEVEL = USEREVENT + 2
+LOSE = USEREVENT + 3
+WIN = USEREVENT + 4
 direction_keys = group_dict({(K_UP, K_w):(0, -1), (K_DOWN, K_s):(0, 1), (K_LEFT, K_a):(-1, 0), (K_RIGHT, K_d):(1, 0)})
-all_levels = ["l1"] # all levels, in order
+all_levels = [f"l{i}" for i in range(10)] # all levels, in order
 
 # transforms a vector to position on a surface
 to_surface_pos = lambda pos, size: int_vector(surface_scale.elementwise()*vector(*pos)+surface_padding/2)
