@@ -25,7 +25,7 @@ NEXTLEVEL = USEREVENT + 2
 LOSE = USEREVENT + 3
 WIN = USEREVENT + 4
 direction_keys = group_dict({(K_UP, K_w):(0, -1), (K_DOWN, K_s):(0, 1), (K_LEFT, K_a):(-1, 0), (K_RIGHT, K_d):(1, 0)})
-all_levels = [f"l{i}" for i in range(1, 11)] # all levels, in order
+all_levels = [f"l{i}" for i in range(1, 7)] # all levels, in order
 
 # transforms a vector to position on a surface
 to_surface_pos = lambda pos, size: int_vector(surface_scale.elementwise()*vector(*pos)+surface_padding/2)
@@ -113,4 +113,5 @@ class button:
       option.surface.blit(option.background, (0,0))
     if self.highlighted is not None:
       pygame.draw.rect(self.surface, foreground, self.options[tuple(self.highlighted)].rect, 5)
+    pygame.display.flip() # temporary workaround
     update_rects.append(self.rect)
