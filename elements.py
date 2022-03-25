@@ -34,10 +34,11 @@ class Wall(element):
     super().__init__(pos, **flags)
     self.horiz = not self.pos.x%1
     self.verti = not self.pos.y%1
+    self.rotation = vector(self.verti, self.horiz)
   
   def draw(self, surface, size):
-    start = to_surface_pos(map(floor, self.pos), size) - vector(self.verti, self.horiz)*26
-    stop = to_surface_pos(map(ceil, self.pos), size) + vector(self.verti, self.horiz)*26
+    start = to_surface_pos(map(floor, self.pos), size) - self.rotation*26
+    stop = to_surface_pos(map(ceil, self.pos), size) + self.rotation*26
     pygame.draw.line(surface, foreground, start, stop, 55)
 
 
@@ -46,13 +47,13 @@ class OneWayWall(Wall):
   action = {"is":{"?":"direction", "T":None, "F":{"stop":"before"}}}
   
   def __init__(self, pos, **flags):
-    pos, direction = pos[:2], pos[2]
+    pos, direction = (vector(pos[0])+vector(pos[1]))/2, pos[2]
     super().__init__(pos, **flags)
     self.direction = vector(direction)
   
   def draw(self, surface, size):
-    start = to_surface_pos(map(floor, self.pos), size) - vector(self.verti, self.horiz)*26
-    stop = to_surface_pos(map(ceil, self.pos), size) + vector(self.verti, self.horiz)*26
+    start = to_surface_pos(map(floor, self.pos), size) - self.rotation*26
+    stop = to_surface_pos(map(ceil, self.pos), size) + self.rotation*26
     pygame.draw.line(surface, foreground, start, stop, 25)
 
 
