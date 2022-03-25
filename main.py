@@ -215,7 +215,7 @@ def menu_button_func(self, choice):
 def select_button_func(self, choice):
   goto_level(all_levels.index(choice.name))
 
-menu_buttons = button(screen, menu_button_func, menu_button_init, (1, 4), (300, 100), screen_rect.center,
+menu_buttons = button(screen, menu_button_func, menu_button_init, (1, 4), (450, 100), screen_rect.center,
                       start=container(text="Start New Game", pos=(0, 0), event=NEXTLEVEL),
                       cont=container(text="Continue Game", pos=(0, 1), event=NEXTLEVEL),
                       select=container(text="Level Select", pos=(0, 2), event=LEVELSELECT),
@@ -253,10 +253,16 @@ def load_select():
 @load_screen("level")
 def load_level(level):
   global player, twin, current_level_p, current_level_t
+  for i in (player, twin, current_level_p, current_level_t):
+    for attr in ("surface", "background", "scaled_surface"):
+      try:
+        delattr(i, attr)
+      except AttributeError:
+        pass
   current_level_p = Maze_class.all[level]["p"]()
   current_level_t = Maze_class.all[level]["t"]()
   player = entity(current_level_p, True, draw_entity((161, 161, 161)).square)
-  twin = entity(current_level_t, False, draw_entity((161, 130, 130)).square)
+  twin = entity(current_level_t, False, draw_entity((190, 130, 130)).square)
   level_text = level_names.current
   screen.blit(font.render(level_text, 1, foreground), (screen_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
   update_level()
@@ -285,7 +291,7 @@ maze("l1_t", twin_pos, size=7, start=(3.5, 5.5), finish=(5.5, 1.5),
             ((1, 3), (2, 3)), ((3, 3), (4, 3), (4, 4), (3, 4), (3, 3)), ((5, 3), (6, 3)), ((2, 2), (6, 2)), ((5, 1), (5, 2))]
 )
 #level 2
-maze("l2_p", twin_pos, size=7, start=(3.5, 5.5), finish=(5.5, 1.5),
+maze("l2_p", player_pos, size=7, start=(3.5, 5.5), finish=(5.5, 1.5),
      walls=[((1, 1), (1, 6), (6, 6), (6, 1), (1, 1)),
             ((1, 3), (2, 3)), ((3, 3), (4, 3), (4, 4), (3, 4), (3, 3)), ((5, 3), (6, 3)), ((2, 2), (5, 2))]
 )
@@ -324,19 +330,22 @@ maze("l5_p", player_pos, size=7, start=(3.5, 3.5), finish=(5.5, 6.5),
 )
 maze("l5_t", twin_pos, size=7, start=(3.5, 3.5), finish=(5.5, 6.5),
      walls=[((1, 1), (6, 1), (6, 7), (5, 7), (5, 6), (1, 6), (1, 1)),
-            ((4, 3), (4, 4), (2, 4)), ((3, 3), (3, 4)), ((5, 2), (5, 6)), ((3, 5), (4, 5), (4, 6)),
+            ((4, 3), (4, 4), (2, 4)), ((3, 3), (3, 4)), ((2, 5), (2, 6)), ((3, 5), (4, 5), (4, 6)),
             ((1, 2), (2, 2), (2, 3)), ((3, 2), (5, 2), (5, 3)), ((5, 5), (5, 4), (6, 4))]
 )
 #level 6
-maze("l6_p", player_pos, size=10, start=(4.5, 6.5), finish=(2.5, 0.5),
-     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
-            ((3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
-            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))]
+maze("l6_p", player_pos, size=10, start=(2.5, 0.5), finish=(7.5, 9.5),
+     walls=[((8, 9), (9, 9), (9, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1), (1, 9), (7, 9), (7, 10), (8, 10), (8, 7), (7, 7)),
+            ((1, 3), (2, 3), (2, 4), (3, 4)), ((1, 8), (2, 8)), ((2, 5), (2, 7), (4, 7)), ((3, 6), (3, 7)), ((3, 8), (3, 9)),
+            ((2, 2), (4, 2), (4, 3)), ((3, 5), (5, 5), (5, 6)), ((4, 4), (4, 5)), ((5, 1), (5, 3), (6, 3), (6, 4)), ((8, 6), (9, 6)),
+            ((5, 8), (5, 7), (6, 7), (6, 6), (7, 6), (7, 5)), ((6, 2), (8, 2)), ((7, 1), (7, 2)), ((7, 3), (8, 3), (8, 5), (9, 5))]
 )
-maze("l6_t", twin_pos, size=10, start=(4.5, 6.5), finish=(2.5, 0.5),
-     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
-            ((2, 1), (2, 3)), ((1, 4), (3, 4), (3, 3)), ((3, 2), (4, 2), (4, 4)), ((2, 6), (2, 5), (4, 5)),
-            ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
+maze("l6_t", twin_pos, size=10, start=(2.5, 0.5), finish=(7.5, 9.5),
+     walls=[((8, 9), (9, 9), (9, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1), (1, 9), (7, 9), (7, 10), (8, 10), (8, 7), (7, 7)),
+            ((1, 2), (2, 2)), ((1, 4), (3, 4)), ((2, 3), (2, 4)), ((1, 6), (2, 6), (2, 5)), ((2, 9), (2, 7), (3, 7)),
+            ((3, 5), (3, 6)), ((3, 1), (3, 3)), ((4, 1), (4, 2)), ((3, 8), (4, 8)), ((4, 7), (4, 9)), ((4, 3), (5, 3)),
+            ((5, 4), (6, 4)), ((5, 2), (5, 5), (6, 5), (6, 6), (7, 6)), ((4, 6), (5, 6), (5, 8), (6, 8), (6, 9)), ((6, 3), (7, 3)),
+            ((7, 1), (7, 4)), ((9, 2), (8, 2), (8, 4)), ((7, 5), (8, 5), (8, 6), (9, 6))]
 )
 
 post_event(MAINMENU)
@@ -375,7 +384,7 @@ while True:
     elif event.type == NEXTLEVEL:
       try:
         load_level(next(level_names))
-      except KeyError:
+      except IndexError:
         post_event(MAINMENU)
     elif event.type in (LOSE, WIN):
       text = {LOSE:'Lose', WIN:'Win'}[event.type]
