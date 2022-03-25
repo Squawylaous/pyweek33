@@ -41,6 +41,21 @@ class Wall(element):
     pygame.draw.line(surface, foreground, start, stop, 55)
 
 
+# class for one-way walls, subclasses Wall
+class OneWayWall(Wall):
+  action = {"is":{"?":"direction", "T":None, "F":{"stop":"before"}}}
+  
+  def __init__(self, pos, **flags):
+    pos, direction = pos[:2], pos[2]
+    super().__init__(pos, **flags)
+    self.direction = vector(direction)
+  
+  def draw(self, surface, size):
+    start = to_surface_pos(map(floor, self.pos), size) - vector(self.verti, self.horiz)*26
+    stop = to_surface_pos(map(ceil, self.pos), size) + vector(self.verti, self.horiz)*26
+    pygame.draw.line(surface, foreground, start, stop, 25)
+
+
 # decorator for creating element subclasses for tiles that activate when landed on
 def Plate(subcls):
   subcls.action = {"if":{"?":"landed", "T":subcls.action, "F":None}}
