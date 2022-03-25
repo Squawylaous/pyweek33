@@ -45,8 +45,7 @@ class entity:
     self.rect = self.surface.get_rect()
 
   def move(self, direction):
-    dir_dict = {"up":vector(0, -1), "down":vector(0, 1), "left":vector(-1, 0), "right":vector(1, 0)}
-    direction = dir_dict[direction]/2
+    direction = vector(direction)/2
     do = container(check_ifs=[])
     for dist in range(self.maze.size*2):
       self.pos += direction
@@ -164,6 +163,74 @@ def split_wall(wall):
     new_a, new_b = new_b, new_b+diff
 
 
+level_names = level_names_class()
+def goto_level(level):
+  level_names.current_level = level-1
+
+maze("l1_p", player_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
+     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
+            ((3, 1), (3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
+            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))]
+)
+maze("l1_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
+     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
+            ((2, 1), (2, 3)), ((1, 4), (3, 4), (3, 3)), ((3, 2), (4, 2), (4, 4)), ((2, 6), (2, 5), (4, 5)),
+            ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
+)
+
+# decorator function for button_init functions
+def button_init(func):
+  def init_func(self, choice):
+    choice = func(self, choice)
+    choice.rect = pygame.rect.Rect(self.size.elementwise()*choice.pos, self.size)
+    choice.surface = self.surface.subsurface(choice.rect)
+    choice.background = pygame.Surface(self.size)
+    choice.text = pygame.transform.scale(font.render(choice.text, 1, foreground),
+                                         int_vector(ratio_vector(font.size(choice.text))*max(self.size*0.75)))
+    choice.background.blit(choice.text, (self.size-choice.text.get_rect().size)/2)
+    return choice
+  return init_func
+
+# initalizes each menu button
+@button_init
+def menu_button_init(self, choice):
+  return choice
+
+# initalizes each level select button
+@button_init
+def select_button_init(self, choice):
+  choice.text = level_names[choice.name]
+  choice.event = NEXTLEVEL
+  return choice
+
+# decorator function for button functions
+def button_func(func):
+  def _func(self, choice):
+    func(self, choice)
+    post_event(choice.event)
+  return _func
+
+# called when a menu button is selected
+@button_func
+def menu_button_func(self, choice):
+  if choice.event == NEXTLEVEL:
+    goto_level({"start":0, "cont":level_names.current_level}[choice.name])
+
+# called when a level select button is selected
+@button_func
+def select_button_func(self, choice):
+  goto_level(all_levels.index(choice.name))
+
+menu_buttons = button(screen, menu_button_func, menu_button_init, (1, 4), (300, 100), screen_rect.center,
+                      start=container(text="Start New Game", pos=(0, 0), event=NEXTLEVEL),
+                      cont=container(text="Continue Game", pos=(0, 1), event=NEXTLEVEL),
+                      select=container(text="Level Select", pos=(0, 2), event=LEVELSELECT),
+                      exit=container(text="Exit Game", pos=(0, 3), event=QUIT)
+)
+
+select_buttons = button(screen, select_button_func, select_button_init, (1, 1), vector(screen_rect.size)*0.875, screen_rect.center,
+                      **{all_levels[i]:container(pos=(i%5, i//5)) for i in range(len(all_levels))})
+
 # returns decorator function
 def load_screen(current_screen):
   # decorator function, updates current_state and turns off user input untill function finishes running
@@ -172,20 +239,20 @@ def load_screen(current_screen):
       current_state.update(override=True, screen=current_screen, input=False)
       screen.fill(background)
       func(*args, **kwargs)
+      update_rects.append(screen_rect)
       current_state.input = True
     return load_func
   return load_decorator
 
-
 # loads the menu screen
 @load_screen("menu")
 def load_menu():
-  pass
+  menu_buttons.draw()
 
 # loads the level select screen
 @load_screen("select")
 def load_select():
-  pass
+  select_buttons.draw()
 
 # loads and initalizes a level
 @load_screen("level")
@@ -205,50 +272,7 @@ def update_level():
   current_level_t.draw()
   update_rects.append(main_surface_rect)
 
-level_names = level_names_class()
-
-maze("l1_p", player_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
-     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
-            ((3, 1), (3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
-            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))]
-)
-maze("l1_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
-     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
-            ((2, 1), (2, 3)), ((1, 4), (3, 4), (3, 3)), ((3, 2), (4, 2), (4, 4)), ((2, 6), (2, 5), (4, 5)),
-            ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
-)
-
-# returns a decorator function
-def button_init(pos, offset, padding):
-  pos, offset, padding = vector(pos), vector(offset), vector(padding)
-  pos = offset
-  def init_decorator(func):
-    def init_func(self, choice):
-      padding
-      font.size(choice.text)
-      choice.text = font.render(choice.text, 1, foreground)
-      
-      return func(choice)
-    return init_func
-  return init_decorator
-
-# initalizes each menu button
-@button_init(screen_rect.center, (1, 4), (0, 25))
-def menu_button_init(self, choice):
-  return choice
-
-# called when a menu button is selected
-def menu_button_func(choice):
-  pass
-
-menu_buttons = button(menu_button_func, menu_button_init,
-                      start=container(text="Start New Game", pos=0),
-                      cont=container(text="Continue Game", pos=0),
-                      select=container(text="Level Select", pos=0),
-                      exit=container(text="Quit", pos=0))
-
 post_event(MAINMENU)
-post_event(NEXTLEVEL)
 
 while True:
   if pygame.event.get(QUIT):
@@ -256,15 +280,25 @@ while True:
   for event in pygame.event.get():
     if event.type == KEYDOWN:
       if event.key == K_ESCAPE:
-        post_event(QUIT)
-      elif "taking_input" in current_state:
+        post_event(MAINMENU)
+      elif current_state.input:
         if event.key in direction_keys:
-          if "level" in current_state:
-            twin.move(direction_keys[event.key])
-            player.move(direction_keys[event.key])
+          direction = direction_keys[event.key]
+          if current_state.screen == "menu":
+            menu_buttons.move(direction)
+            menu_buttons.draw()
+          elif current_state.screen == "select":
+            select_buttons.move(direction)
+            select_buttons.draw()
+          elif current_state.screen == "level":
+            twin.move(direction)
+            player.move(direction)
             update_level()
-        elif event.key == K_RETURN:
-          post_event(NEXTLEVEL)
+        elif event.key in (K_RETURN, K_SPACE):
+          if current_state.screen == "menu":
+            menu_buttons.select()
+          elif current_state.screen == "select":
+            select_buttons.select()
     elif event.type == MAINMENU:
       load_menu()
     elif event.type == LEVELSELECT:
@@ -273,5 +307,5 @@ while True:
       load_level(next(level_names))
   
   pygame.display.update(update_rects)
-  update_rects = []
+  del update_rects[:]
 pygame.quit()
