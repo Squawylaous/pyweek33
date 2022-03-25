@@ -56,7 +56,7 @@ class entity:
       if do.stop:
         break
     if do.finish:
-      print(f"you {('lose', 'win')[self.isPlayer]}")
+      post_event((LOSE, WIN)[self.isPlayer])
   
   def draw(self):
     self._draw(self)
@@ -92,7 +92,7 @@ class entity:
 # class for mazes, just a collection for walls
 class maze:
   all = {};
-  def __init__(self, name, pos, size=None, start=(0,0), finish=(0,0), *, walls, one_way_walls):
+  def __init__(self, name, pos, size=None, start=(0,0), finish=(0,0), *, walls, one_way_walls=[]):
     self.name = name.split("_")
     self.start, self.finish = vector(start), elements.Finish(finish)
     walls = chain(*[zip(wall, wall[1:]) for wall in walls])
@@ -236,8 +236,8 @@ menu_buttons = button(screen, menu_button_func, menu_button_init, (1, 4), (300, 
                       exit=container(text="Exit Game", pos=(0, 3), event=QUIT)
 )
 
-select_buttons = button(screen, select_button_func, select_button_init, (1, 1), vector(screen_rect.size)*0.875, screen_rect.center,
-                      **{all_levels[i]:container(pos=(i%5, i//5)) for i in range(len(all_levels))})
+select_buttons = button(screen, select_button_func, select_button_init, (5, 2), vector(screen_rect.size)*0.875/max(len(all_levels)//5, 5),
+                        screen_rect.center, **{all_levels[i]:container(pos=(i%5, i//5)) for i in range(len(all_levels))})
 
 # returns decorator function
 def load_screen(current_screen):
@@ -269,7 +269,7 @@ def load_level(level):
   current_level_p = maze.all[level]["p"]
   current_level_t = maze.all[level]["t"]
   player = entity(current_level_p, True, draw_entity((161, 161, 161)).square)
-  twin = entity(current_level_t, False, draw_entity((161, 145, 145)).square)
+  twin = entity(current_level_t, False, draw_entity((161, 130, 130)).square)
   level_text = level_names.current
   screen.blit(font.render(level_text, 1, foreground), (screen_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
   update_level()
@@ -316,6 +316,14 @@ while True:
       load_select()
     elif event.type == NEXTLEVEL:
       load_level(next(level_names))
+    elif event.type in (LOSE, WIN):
+      text = f"You {('Lose', 'Win')[self.isPlayer]}!"
+      screen.blit(font.render(level_text, 1, foreground), (screen_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
+      pygame.display.flip()
+      pygame.time.wait(500)
+      if event.type == LOSE:
+          goto_level()
+      post_event(NEXTLEVEL)
   
   pygame.display.update(update_rects)
   del update_rects[:]
