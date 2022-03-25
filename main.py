@@ -50,7 +50,7 @@ class entity:
     for dist in range(self.maze.size*2):
       self.pos += direction
       if self.maze[self.pos]:
-        do = entity.act(getattr(self.maze[self.pos], "action", {"stop":"before"}),
+        do = entity.act(self.maze[self.pos], getattr(self.maze[self.pos], "action", {"stop":"before"}),
                         check_ifs=do.check_ifs, direction=direction)
         self.pos += do.move
       if do.stop:
@@ -63,7 +63,7 @@ class entity:
     self.maze.surface.blit(self.surface, to_surface_pos(self.pos-(0.375, 0.375), self.maze.size))
   
   @staticmethod
-  def act(action, *, check_ifs=[], direction=vector(), do=None):
+  def act(element, action, *, check_ifs=[], direction=vector(), do=None):
     if action is None:
       action = {}
     if do is None:
@@ -76,12 +76,15 @@ class entity:
           do.move = -direction
         elif action[i] == "return":
           do.move = -direction*dist
+      elif i == "is":
+        if action[i]["?"] == "direction":
+          entity.act(element, action[i]["T" if direction == element.direction else "F"], direction=direction, do=do)
       elif i == "if":
-        do.check_ifs.append(action[i])
+        do.check_ifs.append((element, action[i]))
     
-    for check_if in check_ifs:
+    for element, check_if in check_ifs:
       if check_if["?"] == "landed":
-        entity.act(check_if["T" if do.stop else "F"], direction=direction, do=do)
+        entity.act(element, check_if["T" if do.stop else "F"], direction=direction, do=do)
     
     return do
 
@@ -89,11 +92,12 @@ class entity:
 # class for mazes, just a collection for walls
 class maze:
   all = {};
-  def __init__(self, name, pos, size=None, start=(0,0), finish=(0,0), *, walls):
+  def __init__(self, name, pos, size=None, start=(0,0), finish=(0,0), *, walls, one_way_walls):
     self.name = name.split("_")
     self.start, self.finish = vector(start), elements.Finish(finish)
     walls = chain(*[zip(wall, wall[1:]) for wall in walls])
     self.perm_walls = [*map(elements.Wall, chain(*map(split_wall, walls)))]
+    self.one_way_walls = [*map(elements.OneWayWall, one_way_walls)]
     self.toggle_walls = []
     self.plates = [self.finish]
     if size is None:
@@ -123,7 +127,7 @@ class maze:
   
   @property
   def still_elements(self):
-    return chain(self.plates, self.perm_walls)
+    return chain(self.plates, self.perm_walls, self.one_way_walls)
   
   @property
   def anim_elements(self):
@@ -164,13 +168,17 @@ def split_wall(wall):
 
 
 level_names = level_names_class()
-def goto_level(level):
+def goto_level(level=None):
+  if level is None:
+    level = level_names.current_level
   level_names.current_level = level-1
+  return level_names.current_level
 
 maze("l1_p", player_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
      walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
-            ((3, 1), (3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
-            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))]
+            ((3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
+            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))],
+     one_way_walls=[((3,1), (3,2), (-1, 0))]
 )
 maze("l1_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
      walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
@@ -280,7 +288,7 @@ while True:
   for event in pygame.event.get():
     if event.type == KEYDOWN:
       if event.key == K_ESCAPE:
-        post_event(MAINMENU)
+        post_event(QUIT if current_state.screen == "menu" else MAINMENU)
       elif current_state.input:
         if event.key in direction_keys:
           direction = direction_keys[event.key]
@@ -294,6 +302,9 @@ while True:
             twin.move(direction)
             player.move(direction)
             update_level()
+        elif event.key == K_r:
+          goto_level()
+          post_event(NEXTLEVEL)
         elif event.key in (K_RETURN, K_SPACE):
           if current_state.screen == "menu":
             menu_buttons.select()
