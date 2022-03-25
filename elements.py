@@ -6,7 +6,7 @@ from misc import *
 
 
 # class for anything the player can interact with, will be packaged into a maze
-# most attributes should be immutable, seve for anything in self.flags
+# most attributes should be immutable, save for anything in self.flags
 class element:
   def __init__(self, pos, **flags):
     self.pos = vector(pos)
