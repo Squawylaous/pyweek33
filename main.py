@@ -13,6 +13,8 @@ pygame.init()
 screen = pygame.display.set_mode((0, 0), FULLSCREEN)
 screen_rect = screen.get_rect()
 font = pygame.font.SysFont("", 75)
+screen.blit(font.render("Loading...", 1, foreground), (0, screen_rect.h-font.size("Loading...")[1]))
+pygame.display.flip()
 current_state = container(screen="menu", input=False)
 
 
@@ -84,6 +86,7 @@ class entity:
     
     for element, check_if in check_ifs:
       if check_if["?"] == "landed":
+        #TODO: fix
         entity.act(element, check_if["T" if do.stop else "F"], direction=direction, do=do)
     
     return do
@@ -173,18 +176,6 @@ def goto_level(level=None):
     level = level_names.current_level
   level_names.current_level = level-1
   return level_names.current_level
-
-maze("l1_p", player_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
-     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
-            ((3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
-            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))],
-     one_way_walls=[((3,1), (3,2), (-1, 0))]
-)
-maze("l1_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5,0.5),
-     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
-            ((2, 1), (2, 3)), ((1, 4), (3, 4), (3, 3)), ((3, 2), (4, 2), (4, 4)), ((2, 6), (2, 5), (4, 5)),
-            ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
-)
 
 # decorator function for button_init functions
 def button_init(func):
@@ -280,6 +271,40 @@ def update_level():
   current_level_t.draw()
   update_rects.append(main_surface_rect)
 
+
+# all of the mazes for each level (didn't have time to put this in a .txt file or something so it's here)
+#level 1
+maze("l1_p", player_pos, size=5, start=(2.5, 4.5), finish=(4.5, 0.5),
+     walls=[((0, 0), (0, 5), (5, 5), (5, 0), (0, 0)),
+            ((0, 2), (1, 2)), ((2, 2), (3, 2), (3, 3), (2, 3), (2, 2)), ((4, 2), (5, 2)), ((1, 1), (4, 1))]
+)
+maze("l1_t", twin_pos, size=5, start=(2.5, 4.5), finish=(4.5, 0.5),
+     walls=[((0, 0), (0, 5), (5, 5), (5, 0), (0, 0)),
+            ((0, 2), (1, 2)), ((2, 2), (3, 2), (3, 3), (2, 3), (2, 2)), ((4, 2), (5, 2)), ((1, 1), (5, 1)), ((4, 0), (4, 1))]
+)
+#level 2
+maze("l2_p", player_pos, size=5, start=(2.5, 4.5), finish=(4.5, 0.5),
+     walls=[((0, 0), (0, 5), (5, 5), (5, 0), (0, 0)),
+            ((0, 2), (1, 2)), ((2, 2), (3, 2), (3, 3), (2, 3), (2, 2)), ((4, 2), (5, 2)), ((1, 1), (4, 1))]
+)
+maze("l2_t", twin_pos, size=5, start=(2.5, 4.5), finish=(4.5, 0.5),
+     walls=[((0, 0), (0, 5), (5, 5), (5, 0), (0, 0)),
+            ((0, 2), (1, 2)), ((2, 4), (2, 2), (3, 2), (3, 4)), ((4, 2), (5, 2)), ((0, 4), (1, 4), (1, 5)), ((4, 5), (4, 4), (5, 4))]
+)
+#level 3
+maze("l3_p", player_pos, size=7, start=(4.5, 6.5), finish=(2.5, 0.5),
+     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
+            ((3, 2), (4, 2)), ((2, 2), (2, 3), (3, 3), (3, 5), (4, 5)), ((1, 4), (2, 4)),
+            ((2, 5), (2, 6)), ((5, 5), (6, 5)), ((4, 4), (6, 4)), ((4, 3), (6, 3)), ((5, 2), (5, 3))],
+     one_way_walls=[((3,1), (3,2), (-1, 0))]
+)
+maze("l3_t", twin_pos, size=7, start=(4.5, 6.5), finish=(2.5, 0.5),
+     walls=[((1, 1), (1, 6), (4, 6), (4, 7), (5, 7), (5, 6), (6, 6), (6, 1), (3, 1), (3, 0), (2, 0), (2, 1), (1, 1)),
+            ((2, 1), (2, 3)), ((1, 4), (3, 4), (3, 3)), ((3, 2), (4, 2), (4, 4)), ((2, 6), (2, 5), (4, 5)),
+            ((5, 2), (5, 3), (6, 3)), ((5, 4), (5, 6))]
+)
+
+
 post_event(MAINMENU)
 
 while True:
@@ -317,10 +342,11 @@ while True:
     elif event.type == NEXTLEVEL:
       load_level(next(level_names))
     elif event.type in (LOSE, WIN):
-      text = f"You {('Lose', 'Win')[self.isPlayer]}!"
-      screen.blit(font.render(level_text, 1, foreground), (screen_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
+      text = {LOSE:'Lose', WIN:'Win'}[event.type]
+      text = f"You {text}!"
+      screen.blit(font.render(text, 1, foreground, background), (screen_rect.w/2 - font.size(text)[0]/2, UI_offset.y))
       pygame.display.flip()
-      pygame.time.wait(500)
+      pygame.time.wait(1500)
       if event.type == LOSE:
           goto_level()
       post_event(NEXTLEVEL)
