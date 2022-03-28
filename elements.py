@@ -1,4 +1,5 @@
 from math import ceil, floor
+import operator as op
 import pygame
 from pygame.math import Vector2 as vector
 
@@ -47,14 +48,20 @@ class OneWayWall(Wall):
   action = {"is":{"?":"direction", "T":None, "F":{"stop":"before"}}}
   
   def __init__(self, pos, **flags):
-    pos, direction = (vector(pos[0])+vector(pos[1]))/2, pos[2]
+    pos, self.direction = (vector(pos[0])+vector(pos[1]))/2, vector(pos[2])
     super().__init__(pos, **flags)
-    self.direction = vector(direction)
   
   def draw(self, surface, size):
     start = to_surface_pos(map(floor, self.pos), size) - self.rotation*26
     stop = to_surface_pos(map(ceil, self.pos), size) + self.rotation*26
-    pygame.draw.line(surface, foreground, start, stop, 25)
+    # 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i
+    # -----------   ---------   -----------
+    midpoints = [0, 5, 7, 11, 13, 18]
+    midpoints = zip(*[iter([int_vector(start.lerp(stop, i/max(midpoints))) for i in midpoints])]*2)
+    for a, b in midpoints:
+      pygame.draw.line(surface, foreground, a, b, 55)
+    arrow = map(op.add, [start.lerp(stop, i) for i in (2/5, 0.5, 3/5)], [i*self.direction*100 for i in (-2.5, 0, -2.5)])
+    pygame.draw.lines(surface, foreground, 0, [*map(int_vector, arrow)], 40)
 
 
 # decorator for creating element subclasses for tiles that activate when landed on
