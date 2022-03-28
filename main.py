@@ -10,17 +10,17 @@ import misc
 from misc import *
 
 pygame.init()
-screen = pygame.display.set_mode((0, 0), FULLSCREEN)
-screen_rect = screen.get_rect()
+display = pygame.display.set_mode((0, 0), FULLSCREEN)
+display_rect = display.get_rect()
 font = pygame.font.SysFont("", 75)
-screen.blit(font.render("Loading...", 1, foreground), (0, screen_rect.h-font.size("Loading...")[1]))
+display.blit(font.render("Loading...", 1, foreground), (0, display_rect.h-font.size("Loading...")[1]))
 pygame.display.flip()
 current_state = container(screen="menu")
 
 
 # surface to draw mazes on
-main_surface_rect = pygame.rect.Rect(UI_offset, vector(screen_rect.size)-UI_offset)
-main_surface = screen.subsurface(main_surface_rect)
+main_surface_rect = pygame.rect.Rect(UI_offset, vector(display_rect.size)-UI_offset)
+main_surface = display.subsurface(main_surface_rect)
 
 # variables to store constant values
 surface_scale_real.x = min(main_surface_rect.w/2, main_surface_rect.h)
@@ -33,6 +33,22 @@ player = None
 twin = None
 current_level_p = None
 current_level_t = None
+
+
+# class for various screens you can switch between
+class Screen:
+  def __init__(self, parrent=None, rect=None, back=None):
+    if parrent is None:
+      parrent = display
+    self.parrent = parrent
+    if back = None:
+      back = background
+    self.background = back
+    if rect is None:
+      rect = display_rect.copy()
+    self.rect = rect
+    self.surface = pygame.Surface(self.rect.size)
+
 
 # class for entities that can move and stuff
 class entity:
@@ -215,7 +231,7 @@ def menu_button_func(self, choice):
 def select_button_func(self, choice):
   goto_level(all_levels.index(choice.name))
 
-menu_buttons = button(screen, menu_button_func, menu_button_init, (1, 4), (450, 100), screen_rect.center,
+menu_buttons = button(display, menu_button_func, menu_button_init, (1, 4), (450, 100), display_rect.center,
                       start=container(text="Start New Game", pos=(0, 0), event=NEXTLEVEL),
                       cont=container(text="Continue Game", pos=(0, 1), event=NEXTLEVEL),
                       select=container(text="Level Select", pos=(0, 2), event=LEVELSELECT),
@@ -223,9 +239,9 @@ menu_buttons = button(screen, menu_button_func, menu_button_init, (1, 4), (450, 
 )
 
 row_size = 3
-select_buttons = button(screen, select_button_func, select_button_init, (row_size, len(all_levels)/row_size),
-                        vector(screen_rect.size)*0.875/max(len(all_levels)//row_size, row_size),
-                        screen_rect.center, **{all_levels[i]:container(pos=(i%row_size, i//row_size)) for i in range(len(all_levels))})
+select_buttons = button(display, select_button_func, select_button_init, (row_size, len(all_levels)/row_size),
+                        vector(display_rect.size)*0.875/max(len(all_levels)//row_size, row_size),
+                        display_rect.center, **{all_levels[i]:container(pos=(i%row_size, i//row_size)) for i in range(len(all_levels))})
 
 # returns decorator function
 def load_screen(current_screen):
@@ -233,9 +249,9 @@ def load_screen(current_screen):
   def load_decorator(func):
     def load_func(*args, **kwargs):
       current_state.screen=current_screen
-      screen.fill(background)
+      display.fill(background)
       func(*args, **kwargs)
-      update_rects.append(screen_rect)
+      update_rects.append(display_rect)
     return load_func
   return load_decorator
 
@@ -264,7 +280,7 @@ def load_level(level):
   player = entity(current_level_p, True, draw_entity((161, 161, 161)).square)
   twin = entity(current_level_t, False, draw_entity((190, 130, 130)).square)
   level_text = level_names.current
-  screen.blit(font.render(level_text, 1, foreground), (screen_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
+  display.blit(font.render(level_text, 1, foreground), (display_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
   update_level()
 
 # updates the current level display
@@ -389,7 +405,7 @@ while True:
     elif event.type in (LOSE, WIN):
       text = {LOSE:'Lose', WIN:'Win'}[event.type]
       text = f"You {text}!"
-      screen.blit(font.render(text, 1, foreground, background), (screen_rect.w/2 - font.size(text)[0]/2, UI_offset.y))
+      display.blit(font.render(text, 1, foreground, background), (display_rect.w/2 - font.size(text)[0]/2, UI_offset.y))
       pygame.display.flip()
       pygame.time.wait(1500)
       if event.type == LOSE:
