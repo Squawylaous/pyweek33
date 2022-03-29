@@ -1,5 +1,5 @@
 import itertools
-
+from itertools import chain
 
 class splitlist:
   def __init__(key, _iter):
@@ -10,21 +10,16 @@ class splitlist:
     for i in range(len_):
       yield [*itertools.takewhile(key, list_)]
 
-def splitlist(key, list_):
-  list_ = iter(list_)
-  sublist = []
-  while True:
-    next_ = next(list_)
-    if key(next_):
-      sublist.append(next_)
-      continue
-    yield sublist
-    sublist = []
 
-print(splitlist(lambda x:x%3, [1,2,3,4,5,6,7,8,9,10]))
-print(*splitlist(lambda x:x%3, [1,2,3,4,5,6,7,8,9,10]))
+def splitlist(key, list_):
+  indexes = (i for i in range(len(list_)) if not key(list_[i]))
+  start = 0
+  for stop in indexes:
+    yield list_[start:stop]
+    start = stop+1
+  yield list_[start:]
 
 with open("mazes.txt") as file:
   txt = file.readlines()
 
-print(itertools.takewhile(lambda x:x[0]!="#", txt))
+print(*splitlist(lambda x:x[0]!="#", txt), sep="\n")
