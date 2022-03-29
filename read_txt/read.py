@@ -1,25 +1,26 @@
-import itertools
-from itertools import chain
-
-class splitlist:
-  def __init__(key, _iter):
-    self._iter = iter(_iter)
-  
-  def __iter__(self):
-    len_ = 100
-    for i in range(len_):
-      yield [*itertools.takewhile(key, list_)]
-
+import operator as op
+import re
+import functools
+from functools import partial
 
 def splitlist(key, list_):
-  indexes = (i for i in range(len(list_)) if not key(list_[i]))
+  indexes = (*[i for i in range(len(list_)) if not key(list_[i])], len(list_))
   start = 0
   for stop in indexes:
     yield list_[start:stop]
     start = stop+1
-  yield list_[start:]
 
-with open("mazes.txt") as file:
+remove_whitespace = lambda s:"".join(s.split())
+group_re = re.compile("\\([^()]*\\)")
+
+with open("maze.txt") as file:
   txt = file.readlines()
 
-print(*splitlist(lambda x:x[0]!="#", txt), sep="\n")
+names = [i[1:-1] for i in filter(lambda x:x[0]=="#", txt)]
+txt = filter(len, map(remove_whitespace, map("".join, splitlist(lambda x:x[0]!="#", txt))))
+def lol(x):
+  print(x)
+  return "{}"
+txt = map(partial(group_re.sub, lol), txt)
+print()
+print(dict(zip(names, txt)))
