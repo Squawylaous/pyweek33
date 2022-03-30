@@ -11,15 +11,15 @@ def splitlist(key, list_):
     start = stop+1
 
 remove_whitespace = lambda s:"".join(s.split())
-group_re = re.compile("\\([^()]*\\)")
+group_re = re.compile("\\([^()\\[\\]]*\\)|\\[[^()\\[\\]]*\\]")
 
 with open("maze.txt") as file:
-  txt = file.readlines()
-
-names = [i[1:-1] for i in filter(lambda x:x[0]=="#", txt)]
+  txt = [i[:-1] for i in filter(lambda x:len(x)>1, file.readlines())]
+\([^()\[\]]*\)|\][^()\[\]]*\]
+names = [i[1:] for i in filter(lambda x:x[0]=="#", txt)]
 txt = filter(len, map(remove_whitespace, map("".join, splitlist(lambda x:x[0]!="#", txt))))
 def lol(x):
-  print(x)
+  print(x.group())
   return "{}"
 txt = map(partial(group_re.sub, lol), txt)
 print()
