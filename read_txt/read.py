@@ -15,7 +15,7 @@ group_re = re.compile("\\([^()\\[\\]]*\\)|\\[[^()\\[\\]]*\\]")
 
 with open("maze.txt") as file:
   txt = [i[:-1] for i in filter(lambda x:len(x)>1, file.readlines())]
-\([^()\[\]]*\)|\][^()\[\]]*\]
+
 names = [i[1:] for i in filter(lambda x:x[0]=="#", txt)]
 txt = filter(len, map(remove_whitespace, map("".join, splitlist(lambda x:x[0]!="#", txt))))
 def lol(x):
