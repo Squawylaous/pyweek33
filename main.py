@@ -1,5 +1,6 @@
 import operator as op
 from itertools import chain
+from functools import partial
 from math import ceil, floor
 import pygame
 from pygame.locals import *
@@ -31,6 +32,7 @@ player_pos = twin_pos + (main_surface_rect.w/2, 0)
 # variables for storing references to data, can be updated
 player = None
 twin = None
+current_level = container(name="", index=0)
 current_level_p = None
 current_level_t = None
 
@@ -110,6 +112,12 @@ class entity:
 # class for mazes, just a collection for walls
 class Maze_class:
   all = {};
+  
+  @classmethod
+  @propery
+  def names(cls):
+    return list(cls.all.keys())
+  
   def __init__(self, name, pos, size=None, start=(0,0), finish=(0,0), *, walls, one_way_walls=[]):
     self.name = name
     self.start, self.finish = vector(start), elements.Finish(finish)
@@ -181,17 +189,12 @@ def split_wall(wall):
     new_a, new_b = new_b, new_b+diff
 
 
-level_names = level_names_class()
-def goto_level(level=None):
-  if level is None:
-    level = level_names.current_level
-  level_names.current_level = level-1
-  return level_names.current_level
-
 # decorator function for button_init functions
 def button_init(func):
   def init_func(self, choice):
     choice = func(self, choice)
+    if choice.event_attrs is None:
+      choice.event_attrs = {}
     choice.rect = pygame.rect.Rect(self.size.elementwise()*choice.pos, self.size)
     choice.surface = self.surface.subsurface(choice.rect)
     choice.background = pygame.Surface(self.size)
@@ -209,39 +212,40 @@ def menu_button_init(self, choice):
 # initalizes each level select button
 @button_init
 def select_button_init(self, choice):
-  choice.text = level_names[choice.name]
-  choice.event = NEXTLEVEL
+  choice.text = choice.name
+  choice.event = NEWLEVEL
+  choice.event_attrs = {"level":Maze_class.names.index(choice.name)}
   return choice
 
 # decorator function for button functions
 def button_func(func):
   def _func(self, choice):
     func(self, choice)
-    post_event(choice.event)
+    post_event(choice.event, **choice.event_attrs)
   return _func
 
 # called when a menu button is selected
 @button_func
 def menu_button_func(self, choice):
-  if choice.event == NEXTLEVEL:
-    goto_level({"start":0, "cont":level_names.current_level}[choice.name])
+  if choice.event == NEWLEVEL:
+    choice.event_attrs["level"] = {"start":0, "cont":current_level.index}[choice.name]
 
 # called when a level select button is selected
 @button_func
 def select_button_func(self, choice):
-  goto_level(all_levels.index(choice.name))
+  pass
 
 menu_buttons = button(display, menu_button_func, menu_button_init, (1, 4), (450, 100), display_rect.center,
-                      start=container(text="Start New Game", pos=(0, 0), event=NEXTLEVEL),
-                      cont=container(text="Continue Game", pos=(0, 1), event=NEXTLEVEL),
+                      start=container(text="Start New Game", pos=(0, 0), event=NEWLEVEL),
+                      cont=container(text="Continue Game", pos=(0, 1), event=NEWLEVEL),
                       select=container(text="Level Select", pos=(0, 2), event=LEVELSELECT),
                       exit=container(text="Exit Game", pos=(0, 3), event=QUIT)
 )
 
 row_size = 3
-select_buttons = button(display, select_button_func, select_button_init, (row_size, len(all_levels)/row_size),
-                        vector(display_rect.size)*0.875/max(len(all_levels)//row_size, row_size),
-                        display_rect.center, **{all_levels[i]:container(pos=(i%row_size, i//row_size)) for i in range(len(all_levels))})
+select_buttons = button(display, select_button_func, select_button_init, (row_size, len(Maze_class.names)/row_size),
+                        vector(display_rect.size)*0.875/max(len(Maze_class.names)//row_size, row_size),
+                        display_rect.center, **{Maze_class.names[i]:container(pos=(i%row_size, i//row_size)) for i in range(len(Maze_class.names))})
 
 # returns decorator function
 def load_screen(current_screen):
@@ -279,7 +283,7 @@ def load_level(level):
   current_level_t = Maze_class.all[level]["t"]()
   player = entity(current_level_p, True, draw_entity((161, 161, 161)).square)
   twin = entity(current_level_t, False, draw_entity((190, 130, 130)).square)
-  level_text = level_names.current
+  level_text = current_level.name
   display.blit(font.render(level_text, 1, foreground), (display_rect.w/2 - font.size(level_text)[0]/2, UI_offset.y))
   update_level()
 
@@ -295,6 +299,56 @@ def maze(name, *args, **kwargs):
   if name[0] not in Maze_class.all:
     Maze_class.all[name[0]] = {}
   Maze_class.all[name[0]][name[1]] = lambda:Maze_class(name, *args, **kwargs)
+
+
+
+
+with open("maze.txt") as file:
+  txt = [i[:-1] for i in filter(lambda x:len(x)>1, file.readlines())]
+
+group_dict = lambda dict_:{i:value for key, value in dict_.items() for i in key}
+#example: {0:"e", 1:"o", 2:"e", 3:"o"} -> {"e":(0, 2), "o":(1, 3)}
+reverse_and_group_dict = lambda dict_:{key:tuple(i for i in dict_.keys() if dict_[i]==key) for key in set(dict_.values())}
+
+# splits list_ into a list of slices
+# key is called on each item of list_ and any that return true are used as seperators
+def splitlist(key, list_, filter_empty=False):
+  indexes = (*[i for i in range(len(list_)) if key(list_[i])], len(list_))
+  start = 0
+  for stop in indexes:
+    sublist = list_[start:stop]
+    if len(sublist) or not filter_empty:
+      yield sublist
+    start = stop+1
+
+#calls splitlist(key, list_, filter_empty) for values and uses what it seperated list_ by as keys
+def split_to_dict(key, list_, filter_empty=False):
+  return dict(zip(filter(key, list_), splitlist(key, list_, filter_empty)))
+
+def process_txt(val, x, y):
+  wall_dict = group_dict({"|_":"wall"})
+  wall_dict.update(group_dict({key:"one-way "+value for key, value in {"^uU":"u", "vVdD":"d", ">rR":"r", "<lL":"l"}.items()}))
+  tile_dict = group_dict({"Ss":"start", "Ff":"finish"})
+  try:
+    key = (tile_dict if x%2 and y%2 else wall_dict)[val]
+  except KeyError:
+    return None, None
+  key = key.split()
+  return ((x, y), tuple(key[1:])), key[0]
+
+txt = split_to_dict(lambda line:line[0] == "#" and line[-1] == ":", txt, 1)
+names, levels = map(op.itemgetter(slice(1, -1)), txt.keys()), txt.values()
+levels = [split_to_dict(lambda line:line[0] == "#", level, 1) for level in levels]
+maze_names = map(partial(map, op.itemgetter(1)), map(op.methodcaller("keys"), levels))
+maze_names = map(partial(map, op.itemgetter(1)), map(op.methodcaller("keys"), levels))
+levels = [[
+           [(maze[y][x], (x, y)) for y in range(len(maze)) for x in range(len(maze[y])) if maze[y][x] != " " and (x%2 or y%2)]
+           for maze in lvl.values()] for lvl in levels]
+levels = dict(zip(names, map(dict, map(zip, maze_names, levels))))
+del txt
+
+
+
 
 # all of the mazes for each level (didn't have time to put this in a .txt file or something so it's here)
 #level 1
@@ -386,8 +440,7 @@ while True:
           player.move(direction)
           update_level()
       elif event.key == K_r:
-        goto_level()
-        post_event(NEXTLEVEL)
+        post_event(NEWLEVEL)
       elif event.key in (K_RETURN, K_SPACE):
         if current_state.screen == "menu":
           menu_buttons.select()
@@ -397,9 +450,9 @@ while True:
       load_menu()
     elif event.type == LEVELSELECT:
       load_select()
-    elif event.type == NEXTLEVEL:
+    elif event.type == NEWLEVEL:
       try:
-        load_level(next(level_names))
+        load_level(getattr(event, "level", current_level.index))
       except IndexError:
         post_event(MAINMENU)
     elif event.type in (LOSE, WIN):
@@ -409,9 +462,8 @@ while True:
       pygame.display.flip()
       pygame.time.wait(1500)
       if event.type == LOSE:
-          goto_level()
           pygame.event.clear(LOSE)
-      post_event(NEXTLEVEL)
+      post_event(NEWLEVEL)
   
   pygame.display.update(update_rects)
   del update_rects[:]
