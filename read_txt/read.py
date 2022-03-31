@@ -1,11 +1,5 @@
-import pygame
-#from pygame.locals import *
-from pygame.math import Vector2 as vector
 import operator as op
-import re
-import itertools
-from itertools import chain, starmap
-import functools
+from itertools import starmap
 from functools import partial
 
 with open("maze.txt") as file:
@@ -49,7 +43,7 @@ levels = [split_to_dict(lambda line:line[0] == "#", level, 1) for level in level
 print(*levels, sep="\n\n")
 maze_names = map(partial(map, op.itemgetter(1)), map(op.methodcaller("keys"), levels))
 levels = [[
-           [(maze[y][x], vector(x, y)/2) for y in range(len(maze)) for x in range(len(maze[y])) if maze[y][x] != " " and (x%2 or y%2)]
+           [(maze[y][x], (x, y)) for y in range(len(maze)) for x in range(len(maze[y])) if maze[y][x] != " " and (x%2 or y%2)]
            for maze in lvl.values()] for lvl in levels]
 print("\ne\n")
 print(*dict(zip(names, map(dict, map(zip, maze_names, levels)))).items(), sep="\n")
