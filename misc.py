@@ -4,8 +4,8 @@ from pygame.math import Vector2 as vector
 
 # just some miscellaneous functions grouped togther so they can be imported anywhere
 
-background = Color(0, 0, 0)
-foreground = Color(255, 255, 255)
+background = pygame.Color(0, 0, 0)
+foreground = pygame.Color(255, 255, 255)
 update_rects = []
 
 get_sign = lambda x: 1 if x>0 else -1 if x<0 else 0
