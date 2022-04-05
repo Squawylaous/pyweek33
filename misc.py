@@ -39,14 +39,22 @@ class container:
       setattr(self, key, value)
   
   def __getattr__(self, name):
-    return self._default
+    if self._default is None:
+      return None
+    setattr(self, name, self._default())
+    return getattr(self, name)
+  
+  def __getitem__(self, key):
+    return getattr(self, key)
   
   def __repr__(self):
     return f"container<{self.dict}>"
   
   @property
   def dict(self):
-    return self.__dict__
+    retdict = self.__dict__.copy()
+    del retdict["_default"]
+    return retdict
   
   def update(self, other=None, override=False, **kwargs):
     if other is None:
@@ -57,7 +65,6 @@ class container:
     for key, value in kwargs.items():
       if override or (key != "_default" and key not in self.dict):
         setattr(self, key, value)
-
 
 # class for UI buttons the user can select. instances are groups
 class button:
@@ -74,7 +81,8 @@ class button:
   def select(self, choice=None):
     if choice is None:
       choice = self.highlighted
-    self.func(self, self.options[tuple(choice)])
+    if choice is not None:
+      self.func(self, self.options[tuple(choice)])
   
   def move(self, direction):
     if self.highlighted is None:
